@@ -673,23 +673,23 @@ async function submitAttendance(type) {
   try {
     const mapsLink = `https://maps.google.com/?q=${locationData.latitude},${locationData.longitude}`;
     const locLabel = `📍 ${locationData.latitude.toFixed(5)}, ${locationData.longitude.toFixed(5)} (~${Math.round(locationData.accuracy)}m)`;
-
-    // Strip data URL header — send raw base64 for Apps Script Utilities.base64Decode()
     const photoBase64 = photoDataUrl.split(',')[1];
 
-    const payload = {
-      name: name, type: type, date: dateStr, time: timeStr,
-      locationLink: mapsLink,
-      locationLabel: locLabel,
-      photo: photoBase64
-    };
+    // Send as URL-encoded form — most reliable format for Apps Script doPost
+    const params = new URLSearchParams();
+    params.append('name', name);
+    params.append('type', type);
+    params.append('date', dateStr);
+    params.append('time', timeStr);
+    params.append('locationLabel', locLabel);
+    params.append('locationLink', mapsLink);
+    params.append('photo', photoBase64);
 
-    // JSON keeps the base64 string intact (FormData can mangle large blobs)
     await fetch(SHEETS_URL, {
       method: 'POST',
       mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString()
     });
 
   } catch(e) {
