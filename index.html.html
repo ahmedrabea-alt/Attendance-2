@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Daily Attendance</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --blue: #1a73e8;
+    --blue-dark: #1557b0;
+    --green: #1e8a4c;
+    --green-bg: #e6f4ed;
+    --red: #c0392b;
+    --red-bg: #fdecea;
+    --orange: #e07b00;
+    --orange-bg: #fff4e0;
+    --gray-bg: #f5f6fa;
+    --gray-border: #dde1ea;
+    --text: #1a1d2e;
+    --text-sub: #5f6577;
+    --white: #ffffff;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--gray-bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--blue);
+    color: var(--white);
+    padding: 20px 20px 28px;
+    text-align: center;
+  }
+  .header .logo { font-size: 28px; margin-bottom: 4px; }
+  .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .header p { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+
+  /* ── Main card ── */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    margin: -14px 16px 16px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-sub);
+    margin-bottom: 8px;
+  }
+
+  /* ── Name input ── */
+  input[type="text"] {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1.5px solid var(--gray-border);
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    color: var(--text);
+    background: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  input[type="text"]:focus { border-color: var(--blue); }
+  input[type="text"]::placeholder { color: #aab0c0; }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: var(--gray-border); margin: 18px 0; }
+
+  /* ── Location block ── */
+  .location-box {
+    background: var(--gray-bg);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-height: 60px;
+  }
+  .loc-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+  .loc-text { font-size: 14px; line-height: 1.5; color: var(--text-sub); }
+  .loc-text strong { display: block; color: var(--text); font-size: 15px; margin-bottom: 2px; }
+  .loc-coords { font-size: 12px; color: #8a92a6; margin-top: 3px; font-family: monospace; }
+
+  .loc-warning {
+    background: var(--orange-bg);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--orange);
+    font-weight: 600;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .loc-error {
+    background: var(--red-bg);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--red);
+    font-weight: 600;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  /* ── Camera ── */
+  .camera-area {
+    position: relative;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: #1a1d2e;
+    aspect-ratio: 3/4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  video, canvas.preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: var(--radius-sm);
+  }
+  canvas.preview { display: none; }
+  .camera-placeholder {
+    text-align: center;
+    color: #8a92a6;
+    padding: 20px;
+  }
+  .camera-placeholder .cam-icon { font-size: 48px; margin-bottom: 8px; }
+  .camera-placeholder p { font-size: 14px; }
+
+  .cam-btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    -webkit-appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn:active { transform: scale(0.97); opacity: 0.9; }
+  .btn-blue { background: var(--blue); color: var(--white); }
+  .btn-outline { background: var(--white); color: var(--blue); border: 1.5px solid var(--blue); }
+  .btn-green { background: var(--green); color: var(--white); }
+  .btn-red { background: var(--red); color: var(--white); }
+  .btn-gray { background: var(--gray-border); color: var(--text-sub); }
+  .btn:disabled { opacity: 0.45; pointer-events: none; }
+  .btn-sm { flex: 1; padding: 12px 10px; font-size: 14px; }
+
+  /* ── Time pills ── */
+  .time-row {
+    display: flex;
+    gap: 10px;
+  }
+  .time-pill {
+    flex: 1;
+    background: var(--gray-bg);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .time-pill .tp-label { font-size: 11px; color: var(--text-sub); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+  .time-pill .tp-value { font-size: 18px; font-weight: 700; color: var(--text); margin-top: 3px; font-family: monospace; }
+  .time-pill .tp-value.empty { font-size: 14px; color: #aab0c0; font-weight: 400; font-family: inherit; }
+
+  /* ── Success screen ── */
+  #successScreen {
+    display: none;
+    text-align: center;
+    padding: 30px 20px 20px;
+  }
+  .success-icon { font-size: 64px; margin-bottom: 10px; }
+  #successScreen h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  #successScreen p { font-size: 14px; color: var(--text-sub); line-height: 1.6; }
+  .success-detail {
+    background: var(--green-bg);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin: 16px 0;
+    text-align: left;
+  }
+  .success-detail .sd-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
+  .success-detail .sd-row span:first-child { color: var(--text-sub); }
+  .success-detail .sd-row span:last-child { font-weight: 600; color: var(--green); }
+
+  /* ── Setup screen ── */
+  #setupScreen {
+    min-height: 100vh;
+    background: var(--gray-bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 24px;
+    text-align: center;
+  }
+  .setup-icon { font-size: 64px; margin-bottom: 16px; }
+  #setupScreen h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  #setupScreen p { font-size: 14px; color: var(--text-sub); line-height: 1.6; margin-bottom: 24px; }
+  #sheetsUrlInput {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1.5px solid var(--gray-border);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    color: var(--text);
+    background: var(--white);
+    outline: none;
+    margin-bottom: 12px;
+    -webkit-appearance: none;
+  }
+  #sheetsUrlInput:focus { border-color: var(--blue); }
+
+  /* ── Misc ── */
+  .mt { margin-top: 14px; }
+  .mb { margin-bottom: 14px; }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px;
+  }
+  .dot-green { background: var(--green); }
+  .dot-red { background: var(--red); }
+  .dot-orange { background: var(--orange); }
+
+  .live-time {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-sub);
+    padding: 8px 0 4px;
+  }
+  .live-time span { font-weight: 700; color: var(--text); font-family: monospace; }
+
+  /* hide file input */
+  #photoInput { display: none; }
+
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .tag { 
+    display: inline-block; padding: 2px 8px; border-radius: 20px; 
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .tag-green { background: var(--green-bg); color: var(--green); }
+  .tag-orange { background: var(--orange-bg); color: var(--orange); }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     SETUP SCREEN (shown first if no URL saved)
+═══════════════════════════════════════════ -->
+<div id="setupScreen">
+  <div class="setup-icon">⚙️</div>
+  <h2>One-time setup</h2>
+  <p>Paste your Google Sheets Web App URL below.<br>This is set by your team manager once — employees won't see this screen.</p>
+  <input type="url" id="sheetsUrlInput" placeholder="https://script.google.com/macros/s/..." />
+  <div id="setupError" style="color:var(--red);font-size:13px;margin-bottom:10px;display:none;"></div>
+  <button class="btn btn-blue" onclick="saveSetup()">💾 Save & Open Tool</button>
+  <div style="margin-top:24px;padding:16px;background:var(--white);border-radius:var(--radius);text-align:left;width:100%;">
+    <div class="section-label" style="margin-bottom:10px;">How to get the URL</div>
+    <div style="font-size:13px;color:var(--text-sub);line-height:1.8;">
+      1. Open the Google Sheet you want data sent to<br>
+      2. Go to <strong>Extensions → Apps Script</strong><br>
+      3. Paste the Apps Script code (provided separately)<br>
+      4. Click <strong>Deploy → New deployment → Web app</strong><br>
+      5. Set access to <em>"Anyone"</em> → Copy the URL here
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MAIN ATTENDANCE TOOL
+═══════════════════════════════════════════ -->
+<div id="mainApp" style="display:none;">
+
+  <div class="header">
+    <div class="logo">📋</div>
+    <h1>Daily Attendance</h1>
+    <p id="headerDate"></p>
+  </div>
+
+  <div class="card">
+
+    <!-- Live clock -->
+    <div class="live-time">Now: <span id="liveClock"></span></div>
+
+    <div class="divider"></div>
+
+    <!-- Name -->
+    <div class="section-label">Your name</div>
+    <input type="text" id="nameInput" placeholder="Enter your full name" autocomplete="name" />
+
+    <div class="divider"></div>
+
+    <!-- Location -->
+    <div class="section-label">
+      <span class="status-dot" id="locDot" style="background:#aab0c0;"></span>Location
+    </div>
+    <div class="location-box" id="locationBox">
+      <div class="loc-icon">📍</div>
+      <div class="loc-text" id="locText">Waiting for GPS…</div>
+    </div>
+    <div class="loc-warning" id="locWarning">⚠️ Fake/mock location detected. Please disable it.</div>
+    <div class="loc-error" id="locError">❌ Location access denied. Please allow location and reload.</div>
+
+    <div class="divider"></div>
+
+    <!-- Camera / Selfie -->
+    <div class="section-label">Live selfie</div>
+    <div class="camera-area" id="cameraArea">
+      <div class="camera-placeholder" id="camPlaceholder">
+        <div class="cam-icon">📷</div>
+        <p>Camera will open here</p>
+      </div>
+      <video id="videoEl" autoplay playsinline muted style="display:none;"></video>
+      <canvas id="photoCanvas" class="preview"></canvas>
+    </div>
+    <div class="cam-btn-row">
+      <button class="btn btn-outline btn-sm" id="btnOpenCam" onclick="openCamera()">📷 Open camera</button>
+      <button class="btn btn-blue btn-sm" id="btnSnap" onclick="takePhoto()" style="display:none;">📸 Take photo</button>
+      <button class="btn btn-gray btn-sm" id="btnRetake" onclick="retakePhoto()" style="display:none;">🔄 Retake</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Time log -->
+    <div class="section-label">Time log</div>
+    <div class="time-row">
+      <div class="time-pill">
+        <div class="tp-label">Login</div>
+        <div class="tp-value" id="loginDisplay"><span class="empty">—</span></div>
+      </div>
+      <div class="time-pill">
+        <div class="tp-label">Logout</div>
+        <div class="tp-value" id="logoutDisplay"><span class="empty">—</span></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Action buttons -->
+    <button class="btn btn-green mb" id="btnLogin" onclick="submitAttendance('login')">
+      ✅ Log In
+    </button>
+    <button class="btn btn-red" id="btnLogout" onclick="submitAttendance('logout')" style="display:none;">
+      🔴 Log Out
+    </button>
+
+  </div><!-- end card -->
+
+  <!-- Success screen (inside main app) -->
+  <div id="successScreen" class="card">
+    <div class="success-icon" id="successIcon">✅</div>
+    <h2 id="successTitle">Logged in!</h2>
+    <p id="successMsg">Your attendance has been recorded.</p>
+    <div class="success-detail" id="successDetail"></div>
+    <button class="btn btn-outline mt" id="btnAfterSuccess" onclick="afterSuccess()">Done</button>
+  </div>
+
+  <!-- Reset setup (small link at bottom) -->
+  <p style="text-align:center;font-size:12px;color:#aab0c0;padding:10px 0 20px;">
+    <a href="#" onclick="resetSetup()" style="color:#aab0c0;">⚙️ Change Sheets URL</a>
+  </p>
+
+</div><!-- end mainApp -->
+
+<!-- Hidden file input (blocked - for reference only) -->
+<input type="file" id="photoInput" accept="image/*" capture="user">
+
+<script>
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let locationData = null;
+let locationReal = false;
+let locationWatcher = null;
+let photoDataUrl = null;
+let loginTime = null;
+let logoutTime = null;
+let stream = null;
+let cameraOpen = false;
+let SHEETS_URL = localStorage.getItem('attendanceSheetsUrl') || '';
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  if (SHEETS_URL) {
+    showMain();
+  } else {
+    document.getElementById('setupScreen').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+  }
+});
+
+function showMain() {
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  startClock();
+  startLocation();
+  // Restore session state
+  const saved = sessionStorage.getItem('attendanceSession');
+  if (saved) {
+    const s = JSON.parse(saved);
+    loginTime = s.loginTime || null;
+    logoutTime = s.logoutTime || null;
+    if (loginTime) {
+      document.getElementById('loginDisplay').textContent = loginTime;
+      document.getElementById('btnLogin').style.display = 'none';
+      document.getElementById('btnLogout').style.display = 'flex';
+    }
+    if (logoutTime) {
+      document.getElementById('logoutDisplay').textContent = logoutTime;
+      document.getElementById('btnLogout').style.display = 'none';
+    }
+  }
+}
+
+// ══════════════════════════════════════════
+//  SETUP
+// ══════════════════════════════════════════
+function saveSetup() {
+  const url = document.getElementById('sheetsUrlInput').value.trim();
+  const err = document.getElementById('setupError');
+  if (!url.includes('script.google.com')) {
+    err.textContent = 'Please paste the URL from Google Apps Script (Deploy → Web App).';
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+  localStorage.setItem('attendanceSheetsUrl', url);
+  SHEETS_URL = url;
+  showMain();
+}
+
+function resetSetup() {
+  if (!confirm('Change the Google Sheets URL?')) return;
+  localStorage.removeItem('attendanceSheetsUrl');
+  SHEETS_URL = '';
+  document.getElementById('setupScreen').style.display = 'flex';
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('sheetsUrlInput').value = '';
+}
+
+// ══════════════════════════════════════════
+//  CLOCK
+// ══════════════════════════════════════════
+function startClock() {
+  const d = new Date();
+  document.getElementById('headerDate').textContent =
+    d.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  const update = () => {
+    document.getElementById('liveClock').textContent =
+      new Date().toLocaleTimeString('en-US', { hour12: false });
+  };
+  update();
+  setInterval(update, 1000);
+}
+
+// ══════════════════════════════════════════
+//  LOCATION — mock detection
+// ══════════════════════════════════════════
+function startLocation() {
+  if (!navigator.geolocation) {
+    showLocError('Geolocation not supported by your browser.');
+    return;
+  }
+
+  const opts = {
+    enableHighAccuracy: true,
+    timeout: 15000,
+    maximumAge: 0
+  };
+
+  locationWatcher = navigator.geolocation.watchPosition(
+    onLocationSuccess,
+    onLocationError,
+    opts
+  );
+}
+
+function onLocationSuccess(pos) {
+  const { latitude, longitude, accuracy, altitude, speed, heading } = pos.coords;
+  const ts = pos.timestamp;
+
+  // ── Mock / fake location heuristics ──
+  let suspicious = [];
+
+  // 1. Perfect round numbers (fake GPS often uses exact values)
+  if (latitude % 1 === 0 || longitude % 1 === 0) suspicious.push('round coords');
+
+  // 2. Impossibly high accuracy (real GPS rarely better than 4m)
+  if (accuracy !== null && accuracy < 3) suspicious.push('accuracy too high');
+
+  // 3. Timestamp lag (mock tools sometimes replay old positions)
+  const lag = Date.now() - ts;
+  if (lag > 30000) suspicious.push('stale timestamp');
+
+  // 4. 0,0 coordinates
+  if (latitude === 0 && longitude === 0) suspicious.push('null island');
+
+  // 5. Speed impossibly high (indicates teleportation)
+  if (speed !== null && speed > 100) suspicious.push('impossible speed');
+
+  if (suspicious.length >= 2) {
+    // Flag as suspicious
+    locationReal = false;
+    locationData = null;
+    document.getElementById('locDot').style.background = '#e07b00';
+    document.getElementById('locationBox').innerHTML =
+      `<div class="loc-icon">⚠️</div><div class="loc-text"><strong>Suspicious location</strong>Signals: ${suspicious.join(', ')}</div>`;
+    document.getElementById('locWarning').style.display = 'flex';
+    return;
+  }
+
+  // ── Real location ──
+  locationReal = true;
+  locationData = { latitude, longitude, accuracy };
+  document.getElementById('locWarning').style.display = 'none';
+  document.getElementById('locError').style.display = 'none';
+  const mapsUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
+  document.getElementById('locDot').style.background = 'var(--green)';
+  document.getElementById('locText').innerHTML =
+    `<strong>Location captured</strong>Accuracy: ~${Math.round(accuracy)}m
+     <a href="${mapsUrl}" target="_blank" class="loc-coords" style="color:var(--blue);text-decoration:none;">📍 ${latitude.toFixed(6)}, ${longitude.toFixed(6)} — tap to verify</a>`;
+}
+
+function onLocationError(err) {
+  locationReal = false;
+  locationData = null;
+  document.getElementById('locDot').style.background = 'var(--red)';
+  document.getElementById('locText').textContent = 'Could not get location.';
+  document.getElementById('locError').style.display = 'flex';
+  document.getElementById('locError').textContent =
+    err.code === 1
+      ? '❌ Location access denied. Please allow location in browser settings and reload.'
+      : '❌ Unable to detect location. Make sure GPS is on.';
+}
+
+function showLocError(msg) {
+  document.getElementById('locError').textContent = '❌ ' + msg;
+  document.getElementById('locError').style.display = 'flex';
+}
+
+// ══════════════════════════════════════════
+//  CAMERA — force live capture, no gallery
+// ══════════════════════════════════════════
+async function openCamera() {
+  try {
+    // Use facingMode: user for selfie. On mobile this opens front camera.
+    // capture via getUserMedia forces live camera, no gallery.
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+    const video = document.getElementById('videoEl');
+    video.srcObject = stream;
+    video.style.display = 'block';
+    document.getElementById('camPlaceholder').style.display = 'none';
+    document.getElementById('photoCanvas').style.display = 'none';
+    document.getElementById('btnOpenCam').style.display = 'none';
+    document.getElementById('btnSnap').style.display = 'flex';
+    cameraOpen = true;
+  } catch (e) {
+    alert('Camera access denied. Please allow camera access in your browser settings.');
+  }
+}
+
+function takePhoto() {
+  const video = document.getElementById('videoEl');
+  const canvas = document.getElementById('photoCanvas');
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+  // Mirror selfie naturally
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0);
+  ctx.setTransform(1,0,0,1,0,0);
+
+  // Timestamp watermark
+  const now = new Date().toLocaleTimeString('en-US', { hour12: false });
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(0, canvas.height - 36, canvas.width, 36);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '14px monospace';
+  ctx.fillText('📍 Live capture · ' + now, 10, canvas.height - 12);
+
+  photoDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+  // Stop video
+  stream.getTracks().forEach(t => t.stop());
+  video.style.display = 'none';
+  canvas.style.display = 'block';
+  document.getElementById('btnSnap').style.display = 'none';
+  document.getElementById('btnRetake').style.display = 'flex';
+  cameraOpen = false;
+}
+
+function retakePhoto() {
+  photoDataUrl = null;
+  document.getElementById('photoCanvas').style.display = 'none';
+  document.getElementById('btnRetake').style.display = 'none';
+  document.getElementById('btnOpenCam').style.display = 'flex';
+  document.getElementById('camPlaceholder').style.display = 'flex';
+  document.getElementById('camPlaceholder').style.flexDirection = 'column';
+  document.getElementById('camPlaceholder').style.alignItems = 'center';
+}
+
+// ══════════════════════════════════════════
+//  SUBMIT ATTENDANCE
+// ══════════════════════════════════════════
+async function submitAttendance(type) {
+  const name = document.getElementById('nameInput').value.trim();
+
+  // Validations
+  if (!name) { alert('Please enter your name.'); return; }
+  if (!locationReal || !locationData) {
+    alert('Real GPS location is required. Make sure location is enabled and no fake GPS app is active.'); return;
+  }
+  if (!photoDataUrl) { alert('Please take a live selfie photo first.'); return; }
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+  const dateStr = now.toLocaleDateString('en-US', { year:'numeric', month:'2-digit', day:'2-digit' });
+  const maps = `https://maps.google.com/?q=${locationData.latitude},${locationData.longitude}`;
+  const locationLabel = `📍 ${locationData.latitude.toFixed(5)}, ${locationData.longitude.toFixed(5)} (~${Math.round(locationData.accuracy)}m)`;
+
+  // Update UI
+  const btn = type === 'login' ? document.getElementById('btnLogin') : document.getElementById('btnLogout');
+  btn.innerHTML = '<span class="spinner"></span> Submitting…';
+  btn.disabled = true;
+
+  try {
+    const mapsLink = `https://maps.google.com/?q=${locationData.latitude},${locationData.longitude}`;
+    const locLabel = `📍 ${locationData.latitude.toFixed(5)}, ${locationData.longitude.toFixed(5)} (~${Math.round(locationData.accuracy)}m)`;
+
+    // Strip data URL header — send raw base64 for Apps Script Utilities.base64Decode()
+    const photoBase64 = photoDataUrl.split(',')[1];
+
+    const payload = {
+      name: name, type: type, date: dateStr, time: timeStr,
+      locationLink: mapsLink,
+      locationLabel: locLabel,
+      photo: photoBase64
+    };
+
+    // JSON keeps the base64 string intact (FormData can mangle large blobs)
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+
+  } catch(e) {
+    // no-cors = can't read response; treat as submitted
+  }
+
+  // Save to session
+  if (type === 'login') {
+    loginTime = timeStr;
+    sessionStorage.setItem('attendanceSession', JSON.stringify({ loginTime, logoutTime }));
+  } else {
+    logoutTime = timeStr;
+    sessionStorage.setItem('attendanceSession', JSON.stringify({ loginTime, logoutTime }));
+  }
+
+  // Show success
+  showSuccess(type, name, timeStr, dateStr, maps, locationLabel);
+}
+
+function showSuccess(type, name, timeStr, dateStr, maps, locationLabel) {
+  document.getElementById('mainApp').querySelectorAll('.card').forEach(c => c.style.display = 'none');
+  const ss = document.getElementById('successScreen');
+  ss.style.display = 'block';
+
+  if (type === 'login') {
+    document.getElementById('successIcon').textContent = '✅';
+    document.getElementById('successTitle').textContent = 'Logged in!';
+    document.getElementById('successMsg').textContent = 'Your login has been recorded successfully.';
+  } else {
+    document.getElementById('successIcon').textContent = '👋';
+    document.getElementById('successTitle').textContent = 'Logged out!';
+    document.getElementById('successMsg').textContent = 'Your logout has been recorded successfully.';
+  }
+
+  document.getElementById('successDetail').innerHTML = `
+    <div class="sd-row"><span>Name</span><span>${name}</span></div>
+    <div class="sd-row"><span>Date</span><span>${dateStr}</span></div>
+    <div class="sd-row"><span>${type === 'login' ? 'Login' : 'Logout'} time</span><span>${timeStr}</span></div>
+    <div class="sd-row"><span>Location</span><span><a href="${maps}" target="_blank" style="color:var(--green);font-size:12px;">📍 View on map</a></span></div>
+  `;
+
+  document.getElementById('btnAfterSuccess').textContent = type === 'login' ? 'Done (I\'ll log out later)' : 'Done';
+}
+
+function afterSuccess() {
+  document.getElementById('successScreen').style.display = 'none';
+  document.getElementById('mainApp').querySelectorAll('.card:not(#successScreen)').forEach(c => c.style.display = 'block');
+
+  // Update time pills
+  if (loginTime) document.getElementById('loginDisplay').textContent = loginTime;
+  if (logoutTime) document.getElementById('logoutDisplay').textContent = logoutTime;
+
+  // Update buttons
+  if (loginTime && !logoutTime) {
+    document.getElementById('btnLogin').style.display = 'none';
+    document.getElementById('btnLogout').style.display = 'flex';
+    document.getElementById('btnLogout').innerHTML = '🔴 Log Out';
+    document.getElementById('btnLogout').disabled = false;
+  } else if (logoutTime) {
+    document.getElementById('btnLogin').style.display = 'none';
+    document.getElementById('btnLogout').style.display = 'none';
+  }
+
+  // Reset photo for next action
+  photoDataUrl = null;
+  document.getElementById('photoCanvas').style.display = 'none';
+  document.getElementById('btnRetake').style.display = 'none';
+  document.getElementById('btnOpenCam').style.display = 'flex';
+  document.getElementById('btnSnap').style.display = 'none';
+  document.getElementById('camPlaceholder').style.display = 'flex';
+  document.getElementById('camPlaceholder').style.flexDirection = 'column';
+  document.getElementById('camPlaceholder').style.alignItems = 'center';
+}
+
+// ══════════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════════
+function dataURLtoBlob(dataurl) {
+  const arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while(n--) u8arr[n] = bstr.charCodeAt(n);
+  return new Blob([u8arr], {type: mime});
+}
+</script>
+</body>
+</html>
